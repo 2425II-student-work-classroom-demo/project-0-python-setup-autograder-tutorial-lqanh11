@@ -1,45 +1,30 @@
-name: P0-Tutorial
-on:
-  pull_request:
-    branches: [ main ]
-
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
 jobs:
-  run:
-    runs-on: ubuntu-20.04
-    env:
-      OS: ubuntu-20.04
-      PYTHON: '3.6'
-    permissions:
-      contents: read
-      pull-requests: write
-
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
     steps:
-    - uses: actions/checkout@master
-    
-    - name: Setup Python
-      uses: actions/setup-python@master
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Autograder
+      id: autograder
+      uses: classroom-resources/autograding-command-grader@v1
       with:
-        python-version: 3.6
-
-    - name: 'test tutorial'
-      run: |
-        cd tutorial
-        python autograder.py | python ../check_grade.py > /tmp/output
-        cat /tmp/output
-
-    - name: 'Add comment to PR'
+        test-name: Autograder
+        setup-command: pip install pytest
+        command: python autograder.py
+        timeout: 1
+        max-score: 10
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
       env:
-        URL: ${{ github.event.pull_request.comments_url }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        COMMENT=$(cat /tmp/output)
-        echo $URL
-        curl \
-          -X POST \
-          -H "Content-Type: application/json" \
-          -H "Authorization: token $GITHUB_TOKEN" \
-          --data "{ \"body\": \"P0-Tutorial $COMMENT\" }" \
-          $URL
-
-    - name: 'check error'
-      run: python check_error.py < /tmp/output
+        AUTOGRADER_RESULTS: "${{steps.autograder.outputs.result}}"
+      with:
+        runners: autograder
