@@ -21,4 +21,4 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("q3testname", test_names)
 
 if __name__ == "__main__":
-    print(get_all_test_names("q3"))
+    print(get_all_test_names("q1"))
